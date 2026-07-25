@@ -1,4 +1,4 @@
--- SQL Schema for Secret Chat Application (Run this in your Supabase SQL Editor)
+-- SQL Schema & Permissive RLS Policies for Secret Chat (Run this in your Supabase SQL Editor)
 
 -- 1. Users Table
 CREATE TABLE IF NOT EXISTS public.users (
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.friend_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   from_user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
   to_user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-  status VARCHAR(20) DEFAULT 'pending', -- 'pending' | 'accepted' | 'declined'
+  status VARCHAR(20) DEFAULT 'pending',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT unique_friendship UNIQUE (from_user_id, to_user_id)
 );
@@ -31,10 +31,18 @@ CREATE TABLE IF NOT EXISTS public.messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Disable Row Level Security (RLS) so secret 16-digit anonymous users can register & message freely
-ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.friend_requests DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
+-- Enable RLS and add PERMISSIVE POLICIES for public anon users
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Anon Users Policy" ON public.users;
+CREATE POLICY "Public Anon Users Policy" ON public.users FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.friend_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Anon Requests Policy" ON public.friend_requests;
+CREATE POLICY "Public Anon Requests Policy" ON public.friend_requests FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Anon Messages Policy" ON public.messages;
+CREATE POLICY "Public Anon Messages Policy" ON public.messages FOR ALL USING (true) WITH CHECK (true);
 
 -- Enable Realtime for Messages and Requests
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
