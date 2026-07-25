@@ -1,17 +1,34 @@
-import React, { useState } from 'react';
-import { Search, UserPlus, Check, Clock, UserCheck, ShieldAlert, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, UserPlus, Check, Clock, UserCheck, ShieldAlert } from 'lucide-react';
 import { getUsers, getFriendRequests, sendFriendRequest } from '../services/storage';
 
 export default function UserSearch({ currentUser, onRefreshData }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [message, setMessage] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const allUsers = getUsers().filter(u => u.id !== currentUser.id);
-  const requests = getFriendRequests();
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const usersData = await getUsers();
+      const reqsData = await getFriendRequests();
+      setAllUsers(usersData.filter(u => u.id !== currentUser.id));
+      setRequests(reqsData);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Filter users by search term
+  useEffect(() => {
+    loadData();
+  }, [currentUser]);
+
   const filteredUsers = allUsers.filter(u => {
-    if (!searchTerm.trim()) return true; // Show all potential users if search empty
+    if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase().trim();
     return (
       u.username.toLowerCase().includes(term) ||
@@ -26,30 +43,24 @@ export default function UserSearch({ currentUser, onRefreshData }) {
     );
 
     if (!existingReq) return { type: 'NONE' };
-
-    if (existingReq.status === 'accepted') {
-      return { type: 'FRIENDS' };
-    }
-
+    if (existingReq.status === 'accepted') return { type: 'FRIENDS' };
     if (existingReq.status === 'pending') {
-      if (existingReq.fromUserId === currentUser.id) {
-        return { type: 'OUTGOING_PENDING' };
-      } else {
-        return { type: 'INCOMING_PENDING' };
-      }
+      return existingReq.fromUserId === currentUser.id
+        ? { type: 'OUTGOING_PENDING' }
+        : { type: 'INCOMING_PENDING' };
     }
-
     return { type: 'NONE' };
   };
 
-  const handleSendRequest = (targetUser) => {
+  const handleSendRequest = async (targetUser) => {
     try {
-      sendFriendRequest({
+      await sendFriendRequest({
         fromUserId: currentUser.id,
         toUserId: targetUser.id,
       });
       setMessage({ type: 'success', text: `Secret request sent to ${targetUser.username}!` });
-      onRefreshData();
+      await loadData();
+      if (onRefreshData) onRefreshData();
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
       setMessage({ type: 'error', text: err.message });
@@ -108,7 +119,11 @@ export default function UserSearch({ currentUser, onRefreshData }) {
 
         {/* User Results List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {filteredUsers.length === 0 ? (
+          {loading ? (
+            <div className="glass-panel" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              Searching database...
+            </div>
+          ) : filteredUsers.length === 0 ? (
             <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
               No users matching "{searchTerm}". Try searching for another username or code!
             </div>

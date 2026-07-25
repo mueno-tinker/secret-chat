@@ -23,7 +23,7 @@ export default function SecuritySettings({ currentUser, onLogout, onRefreshUser 
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     setPassMsg(null);
 
@@ -33,7 +33,7 @@ export default function SecuritySettings({ currentUser, onLogout, onRefreshUser 
     }
 
     try {
-      changePasswordWithCode({
+      await changePasswordWithCode({
         userId: currentUser.id,
         currentPassword,
         secretCode: changeCode,
@@ -50,7 +50,7 @@ export default function SecuritySettings({ currentUser, onLogout, onRefreshUser 
     }
   };
 
-  const handleDeleteAccount = (e) => {
+  const handleDeleteAccount = async (e) => {
     e.preventDefault();
     setDeleteMsg(null);
 
@@ -60,7 +60,7 @@ export default function SecuritySettings({ currentUser, onLogout, onRefreshUser 
     }
 
     try {
-      deleteAccountWithCode({
+      await deleteAccountWithCode({
         userId: currentUser.id,
         password: deletePassword,
         secretCode: deleteCode,

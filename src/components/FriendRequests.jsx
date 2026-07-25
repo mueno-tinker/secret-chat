@@ -1,18 +1,37 @@
-import React from 'react';
-import { UserCheck, UserX, Clock, ShieldCheck, Check, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { UserCheck, UserX, Clock, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getUsers, getFriendRequests, respondToFriendRequest } from '../services/storage';
 
 export default function FriendRequests({ currentUser, onRefreshData, onSelectContact }) {
-  const users = getUsers();
-  const allRequests = getFriendRequests();
+  const [users, setUsers] = useState([]);
+  const [allRequests, setAllRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const uData = await getUsers();
+      const rData = await getFriendRequests();
+      setUsers(uData);
+      setAllRequests(rData);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [currentUser]);
 
   const incomingRequests = allRequests.filter(r => r.toUserId === currentUser.id && r.status === 'pending');
   const outgoingRequests = allRequests.filter(r => r.fromUserId === currentUser.id && r.status === 'pending');
 
-  const handleResponse = (requestId, status, fromUser) => {
+  const handleResponse = async (requestId, status, fromUser) => {
     try {
-      respondToFriendRequest({ requestId, status });
+      await respondToFriendRequest({ requestId, status });
       if (status === 'accepted') {
         try {
           confetti({ particleCount: 60, spread: 70, origin: { y: 0.5 } });
@@ -21,7 +40,8 @@ export default function FriendRequests({ currentUser, onRefreshData, onSelectCon
           onSelectContact(fromUser);
         }
       }
-      onRefreshData();
+      await loadData();
+      if (onRefreshData) onRefreshData();
     } catch (err) {
       alert(err.message);
     }
@@ -52,7 +72,11 @@ export default function FriendRequests({ currentUser, onRefreshData, onSelectCon
             <span>INCOMING REQUESTS ({incomingRequests.length})</span>
           </h3>
 
-          {incomingRequests.length === 0 ? (
+          {loading ? (
+            <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              Loading requests...
+            </div>
+          ) : incomingRequests.length === 0 ? (
             <div className="glass-panel" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
               No pending incoming secret requests.
             </div>
@@ -126,7 +150,11 @@ export default function FriendRequests({ currentUser, onRefreshData, onSelectCon
             <span>OUTGOING SENT REQUESTS ({outgoingRequests.length})</span>
           </h3>
 
-          {outgoingRequests.length === 0 ? (
+          {loading ? (
+            <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              Loading requests...
+            </div>
+          ) : outgoingRequests.length === 0 ? (
             <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
               No outgoing requests currently waiting for response.
             </div>

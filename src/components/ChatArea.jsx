@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Shield, Lock, Image, Timer, Sparkles, MessageSquare } from 'lucide-react';
-import { getMessages, sendMessage } from '../services/storage';
+import { Send, Shield, Lock, Image, Timer, MessageSquare } from 'lucide-react';
+import { getMessages, sendMessage, subscribeToRealtime } from '../services/storage';
 
 export default function ChatArea({ currentUser, activeContact }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
-  const [selfDestructTimer, setSelfDestructTimer] = useState(null); // null or seconds
+  const [selfDestructTimer, setSelfDestructTimer] = useState(null);
   const messagesEndRef = useRef(null);
 
-  const loadMessages = () => {
+  const loadMessages = async () => {
     if (!activeContact) return;
-    const allMsgs = getMessages();
+    const allMsgs = await getMessages();
     const conversation = allMsgs.filter(m => 
       (m.senderId === currentUser.id && m.receiverId === activeContact.id) ||
       (m.senderId === activeContact.id && m.receiverId === currentUser.id)
@@ -22,42 +22,50 @@ export default function ChatArea({ currentUser, activeContact }) {
     loadMessages();
   }, [activeContact, currentUser]);
 
-  // Auto scroll to bottom
+  useEffect(() => {
+    const unsub = subscribeToRealtime(() => {
+      loadMessages();
+    });
+    return () => unsub();
+  }, [activeContact, currentUser]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e?.preventDefault();
     if (!inputText.trim()) return;
 
+    const textToSend = inputText.trim();
+    setInputText('');
+
     try {
-      sendMessage({
+      await sendMessage({
         senderId: currentUser.id,
         receiverId: activeContact.id,
-        text: inputText.trim(),
+        text: textToSend,
         selfDestructIn: selfDestructTimer,
       });
-      setInputText('');
-      loadMessages();
+      await loadMessages();
     } catch (err) {
       alert(err.message);
     }
   };
 
-  const handleSendQuickImage = () => {
+  const handleSendQuickImage = async () => {
     const mockImages = [
       'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&auto=format&fit=crop&q=60',
       'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=60'
     ];
     const randomImg = mockImages[Math.floor(Math.random() * mockImages.length)];
     
-    sendMessage({
+    await sendMessage({
       senderId: currentUser.id,
       receiverId: activeContact.id,
       text: `![Encrypted Media](${randomImg})`,
     });
-    loadMessages();
+    await loadMessages();
   };
 
   if (!activeContact) {

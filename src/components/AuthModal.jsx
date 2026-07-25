@@ -40,7 +40,7 @@ export default function AuthModal({ onLoginSuccess }) {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     
@@ -58,7 +58,7 @@ export default function AuthModal({ onLoginSuccess }) {
     }
 
     try {
-      const newUser = registerUser({
+      const newUser = await registerUser({
         username: regUsername,
         password: regPassword,
         secretCode: generatedCode,
@@ -69,7 +69,7 @@ export default function AuthModal({ onLoginSuccess }) {
     }
   };
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -79,14 +79,14 @@ export default function AuthModal({ onLoginSuccess }) {
     }
 
     try {
-      const user = loginUser({ username: loginUsername, password: loginPassword });
+      const user = await loginUser({ username: loginUsername, password: loginPassword });
       onLoginSuccess(user);
     } catch (err) {
       setErrorMsg(err.message);
     }
   };
 
-  const handleRecoverySubmit = (e) => {
+  const handleRecoverySubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
@@ -97,7 +97,7 @@ export default function AuthModal({ onLoginSuccess }) {
     }
 
     try {
-      recoverPasswordWithSecretCode({
+      await recoverPasswordWithSecretCode({
         secretCode: recCode,
         newPassword: recNewPassword,
       });

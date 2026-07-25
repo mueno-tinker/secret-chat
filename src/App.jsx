@@ -22,10 +22,10 @@ export default function App() {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   // Refresh user data & contacts
-  const refreshData = () => {
+  const refreshData = async () => {
     if (!currentUser) return;
 
-    const userContacts = getContacts(currentUser.id);
+    const userContacts = await getContacts(currentUser.id);
     setContacts(userContacts);
 
     // Auto-select first contact if none selected and contacts exist
@@ -37,7 +37,7 @@ export default function App() {
       if (updatedActive) setActiveContact(updatedActive);
     }
 
-    const requests = getFriendRequests();
+    const requests = await getFriendRequests();
     const pendingIncoming = requests.filter(r => r.toUserId === currentUser.id && r.status === 'pending');
     setPendingRequestsCount(pendingIncoming.length);
   };
