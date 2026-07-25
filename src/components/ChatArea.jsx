@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Shield, Lock, Image, Timer, MessageSquare } from 'lucide-react';
+import { Send, Shield, Lock, Image, Timer, MessageSquare, ArrowLeft } from 'lucide-react';
 import { getMessages, sendMessage, subscribeToRealtime } from '../services/storage';
 
-export default function ChatArea({ currentUser, activeContact }) {
+export default function ChatArea({ currentUser, activeContact, onBackToContacts }) {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [selfDestructTimer, setSelfDestructTimer] = useState(null);
@@ -117,7 +117,7 @@ export default function ChatArea({ currentUser, activeContact }) {
       
       {/* Header */}
       <div style={{
-        padding: '16px 24px',
+        padding: '12px 16px',
         background: 'rgba(15, 20, 32, 0.85)',
         backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--border-subtle)',
@@ -126,27 +126,47 @@ export default function ChatArea({ currentUser, activeContact }) {
         justifyContent: 'space-between',
         zIndex: 10
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {onBackToContacts && (
+            <button
+              onClick={onBackToContacts}
+              style={{
+                padding: '8px',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: '#00f2fe',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title="Back to contacts"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          )}
+
           <div style={{
-            width: '44px',
-            height: '44px',
+            width: '40px',
+            height: '40px',
             borderRadius: '50%',
             background: activeContact.isBot
               ? 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)'
               : 'linear-gradient(135deg, #00f2fe 0%, #10b981 100%)',
             color: '#050b14',
             fontWeight: '700',
-            fontSize: '1.1rem',
+            fontSize: '1rem',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            flexShrink: 0
           }}>
             {activeContact.username.charAt(0).toUpperCase()}
           </div>
 
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: '700', fontSize: '1.1rem', color: 'var(--text-main)' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {activeContact.username}
               </span>
               {activeContact.isBot && (
@@ -155,27 +175,27 @@ export default function ChatArea({ currentUser, activeContact }) {
                 </span>
               )}
             </div>
-            <div className="mono-code" style={{ fontSize: '0.75rem', color: '#00f2fe' }}>
-              Auth Code: {activeContact.secretCode}
+            <div className="mono-code" style={{ fontSize: '0.72rem', color: '#00f2fe' }}>
+              Code: {activeContact.secretCode}
             </div>
           </div>
         </div>
 
         {/* Security Indicator */}
-        <div style={{
+        <div className="mobile-hide" style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
-          padding: '6px 14px',
+          gap: '6px',
+          padding: '6px 12px',
           borderRadius: '20px',
           background: 'rgba(16, 185, 129, 0.12)',
           border: '1px solid rgba(16, 185, 129, 0.3)',
           color: '#10b981',
-          fontSize: '0.78rem',
+          fontSize: '0.75rem',
           fontWeight: '600'
         }}>
-          <Lock size={14} />
-          <span>256-Bit E2E Encrypted</span>
+          <Lock size={12} />
+          <span>E2E Encrypted</span>
         </div>
       </div>
 
@@ -183,26 +203,26 @@ export default function ChatArea({ currentUser, activeContact }) {
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '24px',
+        padding: '16px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px'
+        gap: '12px'
       }}>
         {messages.length === 0 ? (
           <div style={{
             margin: 'auto',
             textAlign: 'center',
             color: 'var(--text-dim)',
-            fontSize: '0.9rem',
-            padding: '20px',
+            fontSize: '0.88rem',
+            padding: '16px',
             background: 'rgba(255, 255, 255, 0.02)',
             borderRadius: '16px',
             border: '1px solid var(--border-subtle)',
-            maxWidth: '360px'
+            maxWidth: '320px'
           }}>
-            <Shield size={32} style={{ marginBottom: '10px', color: '#00f2fe' }} />
-            <p>End-to-End Encrypted Session Established.</p>
-            <p style={{ fontSize: '0.78rem', marginTop: '6px' }}>Say hello to <b>{activeContact.username}</b>!</p>
+            <Shield size={28} style={{ marginBottom: '8px', color: '#00f2fe' }} />
+            <p>Encrypted Chat Established.</p>
+            <p style={{ fontSize: '0.75rem', marginTop: '4px' }}>Say hello to <b>{activeContact.username}</b>!</p>
           </div>
         ) : (
           messages.map(msg => {
@@ -217,13 +237,13 @@ export default function ChatArea({ currentUser, activeContact }) {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: isMe ? 'flex-end' : 'flex-start',
-                  maxWidth: '70%',
+                  maxWidth: '85%',
                   alignSelf: isMe ? 'flex-end' : 'flex-start'
                 }}
               >
                 <div style={{
-                  padding: '12px 16px',
-                  borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                  padding: '10px 14px',
+                  borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                   background: isMe
                     ? 'linear-gradient(135deg, rgba(0, 242, 254, 0.25) 0%, rgba(79, 172, 254, 0.25) 100%)'
                     : 'rgba(255, 255, 255, 0.07)',
@@ -237,14 +257,14 @@ export default function ChatArea({ currentUser, activeContact }) {
                       <img
                         src={imgUrl}
                         alt="Encrypted Media"
-                        style={{ maxWidth: '280px', borderRadius: '10px', display: 'block', marginBottom: '6px' }}
+                        style={{ maxWidth: '100%', borderRadius: '10px', display: 'block', marginBottom: '6px' }}
                       />
-                      <span style={{ fontSize: '0.75rem', color: '#00f2fe', display: 'block', fontStyle: 'italic' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#00f2fe', display: 'block', fontStyle: 'italic' }}>
                         📷 Encrypted Image Payload
                       </span>
                     </div>
                   ) : (
-                    <p style={{ fontSize: '0.95rem', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                    <p style={{ fontSize: '0.9rem', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                       {msg.text}
                     </p>
                   )}
@@ -254,7 +274,7 @@ export default function ChatArea({ currentUser, activeContact }) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  fontSize: '0.7rem',
+                  fontSize: '0.68rem',
                   color: 'var(--text-dim)',
                   marginTop: '4px',
                   padding: '0 4px'
@@ -275,13 +295,13 @@ export default function ChatArea({ currentUser, activeContact }) {
 
       {/* Input Bar */}
       <div style={{
-        padding: '16px 24px',
-        background: 'rgba(15, 20, 32, 0.9)',
+        padding: '12px 16px',
+        background: 'rgba(15, 20, 32, 0.95)',
         backdropFilter: 'blur(16px)',
         borderTop: '1px solid var(--border-subtle)',
         display: 'flex',
         alignItems: 'center',
-        gap: '12px'
+        gap: '8px'
       }}>
         <button
           type="button"
@@ -296,17 +316,17 @@ export default function ChatArea({ currentUser, activeContact }) {
             transition: 'var(--transition-fast)'
           }}
         >
-          <Image size={20} />
+          <Image size={18} />
         </button>
 
-        <form onSubmit={handleSend} style={{ flex: 1, display: 'flex', gap: '12px' }}>
+        <form onSubmit={handleSend} style={{ flex: 1, display: 'flex', gap: '8px' }}>
           <input
             type="text"
-            placeholder={`Send secret message to ${activeContact.username}...`}
+            placeholder={`Message ${activeContact.username}...`}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             className="input-field"
-            style={{ borderRadius: '12px', padding: '12px 18px', fontSize: '0.95rem' }}
+            style={{ borderRadius: '12px', padding: '10px 14px', fontSize: '0.9rem' }}
           />
 
           <button
@@ -314,14 +334,13 @@ export default function ChatArea({ currentUser, activeContact }) {
             className="btn-primary"
             disabled={!inputText.trim()}
             style={{
-              padding: '0 20px',
+              padding: '0 16px',
               borderRadius: '12px',
               opacity: inputText.trim() ? 1 : 0.5,
               cursor: inputText.trim() ? 'pointer' : 'not-allowed'
             }}
           >
-            <Send size={18} />
-            <span>Send</span>
+            <Send size={16} />
           </button>
         </form>
       </div>

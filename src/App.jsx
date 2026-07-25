@@ -20,19 +20,23 @@ export default function App() {
   const [contacts, setContacts] = useState([]);
   const [activeContact, setActiveContact] = useState(null);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // Refresh user data & contacts
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const refreshData = async () => {
     if (!currentUser) return;
 
     const userContacts = await getContacts(currentUser.id);
     setContacts(userContacts);
 
-    // Auto-select first contact if none selected and contacts exist
-    if (!activeContact && userContacts.length > 0) {
+    if (!activeContact && userContacts.length > 0 && !isMobile) {
       setActiveContact(userContacts[0]);
     } else if (activeContact) {
-      // Keep active contact updated if in contact list
       const updatedActive = userContacts.find(c => c.id === activeContact.id);
       if (updatedActive) setActiveContact(updatedActive);
     }
@@ -46,7 +50,6 @@ export default function App() {
     refreshData();
   }, [currentUser]);
 
-  // Realtime Broadcast Listener
   useEffect(() => {
     const unsubscribe = subscribeToRealtime(() => {
       refreshData();
@@ -69,56 +72,67 @@ export default function App() {
     return <AuthModal onLoginSuccess={handleLoginSuccess} />;
   }
 
+  // On mobile: show chat view if contact selected & on chats tab, otherwise show sidebar/nav
+  const showMobileChatView = isMobile && activeTab === 'chats' && activeContact;
+
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <Sidebar
-        currentUser={currentUser}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        contacts={contacts}
-        activeContact={activeContact}
-        setActiveContact={(contact) => {
-          setActiveContact(contact);
-          setActiveTab('chats');
-        }}
-        pendingRequestsCount={pendingRequestsCount}
-        onLogout={handleLogout}
-      />
+    <div className="app-container" style={{ display: 'flex', width: '100vw', height: '100vh', height: '100dvh', overflow: 'hidden' }}>
+      {(!isMobile || !showMobileChatView) && (
+        <Sidebar
+          currentUser={currentUser}
+          activeTab={activeTab}
+          setActiveTab={(tab) => {
+            setActiveTab(tab);
+            if (tab !== 'chats') setActiveContact(null);
+          }}
+          contacts={contacts}
+          activeContact={activeContact}
+          setActiveContact={(contact) => {
+            setActiveContact(contact);
+            setActiveTab('chats');
+          }}
+          pendingRequestsCount={pendingRequestsCount}
+          onLogout={handleLogout}
+        />
+      )}
 
-      <main style={{ flex: 1, display: 'flex', height: '100vh', overflow: 'hidden' }}>
-        {activeTab === 'chats' && (
-          <ChatArea
-            currentUser={currentUser}
-            activeContact={activeContact}
-          />
-        )}
+      {(!isMobile || showMobileChatView || activeTab !== 'chats') && (
+        <main className="main-content" style={{ flex: 1, display: 'flex', height: '100vh', height: '100dvh', overflow: 'hidden' }}>
+          {activeTab === 'chats' && (
+            <ChatArea
+              currentUser={currentUser}
+              activeContact={activeContact}
+              onBackToContacts={isMobile ? () => setActiveContact(null) : undefined}
+            />
+          )}
 
-        {activeTab === 'search' && (
-          <UserSearch
-            currentUser={currentUser}
-            onRefreshData={refreshData}
-          />
-        )}
+          {activeTab === 'search' && (
+            <UserSearch
+              currentUser={currentUser}
+              onRefreshData={refreshData}
+            />
+          )}
 
-        {activeTab === 'requests' && (
-          <FriendRequests
-            currentUser={currentUser}
-            onRefreshData={refreshData}
-            onSelectContact={(contact) => {
-              setActiveContact(contact);
-              setActiveTab('chats');
-            }}
-          />
-        )}
+          {activeTab === 'requests' && (
+            <FriendRequests
+              currentUser={currentUser}
+              onRefreshData={refreshData}
+              onSelectContact={(contact) => {
+                setActiveContact(contact);
+                setActiveTab('chats');
+              }}
+            />
+          )}
 
-        {activeTab === 'security' && (
-          <SecuritySettings
-            currentUser={currentUser}
-            onLogout={handleLogout}
-            onRefreshUser={() => setCurrentUser(getCurrentSession())}
-          />
-        )}
-      </main>
+          {activeTab === 'security' && (
+            <SecuritySettings
+              currentUser={currentUser}
+              onLogout={handleLogout}
+              onRefreshUser={() => setCurrentUser(getCurrentSession())}
+            />
+          )}
+        </main>
+      )}
     </div>
   );
 }

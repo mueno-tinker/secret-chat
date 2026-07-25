@@ -31,6 +31,11 @@ CREATE TABLE IF NOT EXISTS public.messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Disable Row Level Security (RLS) so secret 16-digit anonymous users can register & message freely
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.friend_requests DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
+
 -- Enable Realtime for Messages and Requests
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.friend_requests;
